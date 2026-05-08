@@ -23,7 +23,7 @@ EMAIL               = os.getenv("ALERT_EMAIL")
 PASSWORD            = os.getenv("ALERT_PASSWORD")
 RECIPIENT           = os.getenv("ALERT_RECIPIENT")
 ALERT_COOLDOWN      = int(os.getenv("ALERT_COOLDOWN_SECONDS", 600))
-HONEYPOT_PORT       = int(os.getenv("HONEYPOT_PORT", 9200))
+HONEYPOT_PORT       = int(os.environ.get("PORT", 9200))
 
 # ===== Alert Throttle State =====
 # Maps source_ip -> last alert timestamp (epoch seconds)
@@ -39,7 +39,9 @@ def should_send_alert(ip):
     return False
 
 # ===== Database Setup =====
-db_conn   = sqlite3.connect("honeypot_logs.db", check_same_thread=False)
+DB_PATH = os.getenv("DB_PATH", "honeypot_logs.db")
+
+db_conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 db_cursor = db_conn.cursor()
 
 db_cursor.execute('''CREATE TABLE IF NOT EXISTS events (
@@ -402,6 +404,11 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class AttackHandler(BaseHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "*")
+        self.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+    
     async def get(self):
         event = await self.handle_request()
         self.set_header("Content-Type", "application/json")
@@ -414,6 +421,12 @@ class AttackHandler(BaseHandler):
 
 
 class FakeElasticsearchHandler(BaseHandler):
+    
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "*")
+        self.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+    
     async def get(self):
         ip  = self.request.remote_ip
         uri = self.request.uri
@@ -425,7 +438,17 @@ class FakeElasticsearchHandler(BaseHandler):
         if should_send_alert(ip):
             send_alert(ip, uri, ua, geo)
         self.set_header("Content-Type", "application/json")
-        self.write(json.dumps({"name": "Elasticsearch-Node", "version": {"number": "7.10.0"}}))
+        self.write(json.dumps({
+            "name": "elastic-prod-node-1",
+            "cluster_name": "production-es-cluster",
+            "cluster_uuid": "kJ8d9slPQr2xYz",
+            "version": {
+                "number": "7.10.0",
+                "build_flavor": "default",
+                "build_type": "docker"
+            },
+            "tagline": "You Know, for Search"
+        }))
 
     async def post(self):
         await self.get()
@@ -433,6 +456,11 @@ class FakeElasticsearchHandler(BaseHandler):
 
 # ── Fake Login / Credential Harvesting ──
 class FakeLoginHandler(tornado.web.RequestHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "*")
+        self.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+    
     """
     Serves a convincing Kibana-style login page.
     Any credentials submitted are captured and stored.
@@ -544,10 +572,18 @@ FAKE_LOGIN_HTML = """<!DOCTYPE html>
 </body>
 </html>"""
 
+class HealthHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write({"status": "ok"})
 
 def make_app():
     return tornado.web.Application([
+        (r"/health",        HealthHandler),
         (r"/",              FakeElasticsearchHandler),
+        (r"/_cat/indices",  FakeElasticsearchHandler),
+        (r"/_cluster/health",FakeElasticsearchHandler),
+        (r"/_nodes",        FakeElasticsearchHandler),
+        (r"/_mapping",      FakeElasticsearchHandler),
         (r"/_search",       AttackHandler),
         (r"/login",         FakeLoginHandler),
         (r"/kibana",        FakeLoginHandler),

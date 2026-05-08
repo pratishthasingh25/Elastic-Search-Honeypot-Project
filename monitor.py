@@ -8,9 +8,10 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-MONITOR_PORT = int(os.getenv("MONITOR_PORT", 8080))
+MONITOR_PORT = int(os.environ.get("PORT", 8080))
 
-db_conn   = sqlite3.connect("honeypot_logs.db", check_same_thread=False)
+DB_PATH = os.getenv("DB_PATH", "honeypot_logs.db")
+db_conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 db_cursor = db_conn.cursor()
 
 # ===== CSV Export =====
@@ -637,9 +638,13 @@ function clearFilters() {{
 </body>
 </html>""")
 
-
+class HealthHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write({"status": "dashboard ok"})
+        
 def make_app():
     return tornado.web.Application([
+        (r"/health", HealthHandler),
         (r"/",       DashboardHandler),
         (r"/stats",  StatsHandler),
         (r"/export", ExportHandler),

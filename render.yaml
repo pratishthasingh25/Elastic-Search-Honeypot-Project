@@ -1,0 +1,45 @@
+services:
+  # ── Honeypot Service ──
+  - type: web
+    name: delilah-honeypot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python honeypot.py
+    plan: free
+    healthCheckPath: /health
+
+    envVars:
+      - key: DB_PATH
+        value: honeypot_logs.db
+
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+
+      - key: SMTP_PORT
+        value: 587
+
+      - key: ALERT_EMAIL
+        sync: false
+
+      - key: ALERT_PASSWORD
+        sync: false
+
+      - key: ALERT_RECIPIENT
+        sync: false
+
+      - key: ALERT_COOLDOWN_SECONDS
+        value: 600
+
+
+  # ── Dashboard Service ──
+  - type: web
+    name: delilah-monitor
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python monitor.py
+    plan: free
+    healthCheckPath: /health
+
+    envVars:
+      - key: DB_PATH
+        value: honeypot_logs.db
