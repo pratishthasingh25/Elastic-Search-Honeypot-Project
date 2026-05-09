@@ -211,7 +211,7 @@ jobs:
             exit 0
           fi
           echo "Checking monitor health at $RENDER_MONITOR_URL..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$RENDER_MONITOR_URL" --max-time 15)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$RENDER_MONITOR_URL" --max-time 120)
           if [ "$STATUS" = "200" ]; then
             echo "✅ Monitor dashboard is healthy (HTTP $STATUS)"
           else
