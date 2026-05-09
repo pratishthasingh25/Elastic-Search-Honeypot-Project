@@ -205,7 +205,7 @@ class DashboardHandler(tornado.web.RequestHandler):
             location    = f"{city or '?'}, {country or '?'}"
             ua_display  = (ua[:44] + "…") if len(ua) > 44 else ua
             uri_display = (uri[:32] + "…") if len(uri) > 32 else uri
-            ts_display  = ts[:19].replace("T", " ") if ts else ""
+            ts_display = ts.strftime("%Y-%m-%d %H:%M:%S") if ts else ""
             method_color = "#ff4757" if method == "POST" else "#4a5d78"
             rows_html += f"""
               <tr class="log-row" data-type="{etype}" data-ip="{src_ip}" data-country="{country or ''}">
