@@ -96,7 +96,7 @@ class StatsHandler(tornado.web.RequestHandler):
             WHERE country IS NOT NULL
             GROUP BY country ORDER BY count DESC LIMIT 10
         """)
-        countries = [{"country": r[0], "count": int(r[1])} for r in db_cursor.fetchall()]
+        countries = [{"country": str(r[0]), "count": int(r[1])} for r in db_cursor.fetchall()]
 
         # Geo points
         db_cursor.execute("""
@@ -107,13 +107,12 @@ class StatsHandler(tornado.web.RequestHandler):
     {
         "lat": float(r[0]),
         "lon": float(r[1]),
-        "ip": r[2],
-        "type": r[3],
-        "country": r[4]
+        "ip": str(r[2]),
+        "type": str(r[3]),
+        "country": str(r[4])
     }
     for r in db_cursor.fetchall()
 ]
-
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps({
             "total_events":  total_events,
