@@ -113,20 +113,20 @@ class StatsHandler(tornado.web.RequestHandler):
     }
     for r in db_cursor.fetchall()
 ]
-self.set_header("Content-Type", "application/json")
+      self.set_header("Content-Type", "application/json")
 
-response = {
-    "total_events": int(total_events),
-    "total_attacks": int(total_attacks),
-    "top_ip": str(top_ip),
-    "top_endpoint": str(top_endpoint),
-    "cred_count": int(cred_count),
-    "hourly": hourly,
-    "types": types,
-    "timeline": timeline,
-    "countries": countries,
-    "geo_points": geo_points,
-}
+      response = {
+          "total_events": int(total_events),
+          "total_attacks": int(total_attacks),
+          "top_ip": str(top_ip),
+          "top_endpoint": str(top_endpoint),
+          "cred_count": int(cred_count),
+          "hourly": hourly,
+          "types": types,
+          "timeline": timeline,
+          "countries": countries,
+          "geo_points": geo_points,
+      }
 
 self.write(json.dumps(response, default=str))
 
