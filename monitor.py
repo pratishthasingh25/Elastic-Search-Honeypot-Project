@@ -64,9 +64,9 @@ class StatsHandler(tornado.web.RequestHandler):
 
         # Hourly (last 24h)
         db_cursor.execute("""
-    SELECT EXTRACT(HOUR FROM timestamp) as hour, COUNT(*) as count
+    SELECT EXTRACT(HOUR FROM CAST(timestamp AS TIMESTAMP)) as hour, COUNT(*) as count
     FROM events
-    WHERE timestamp > NOW() - INTERVAL '24 hours'
+    WHERE CAST(timestamp AS TIMESTAMP) > NOW() - INTERVAL '24 hours'
     GROUP BY hour
     ORDER BY hour
 """)
@@ -80,12 +80,14 @@ class StatsHandler(tornado.web.RequestHandler):
         types = [{"type": r[0], "count": r[1]} for r in db_cursor.fetchall()]
 
         # 7-day timeline (attacks per day)
+        # 7-day timeline
         db_cursor.execute("""
-    SELECT DATE(timestamp) as day, COUNT(*) as count
-    FROM events
-    WHERE timestamp > NOW() - INTERVAL '7 days'
-    GROUP BY day
-    ORDER BY day
+            SELECT DATE(CAST(timestamp AS TIMESTAMP)) as day,
+                   COUNT(*) as count
+            FROM events
+            WHERE CAST(timestamp AS TIMESTAMP) > NOW() - INTERVAL '7 days'
+            GROUP BY day
+            ORDER BY day
 """)
         timeline = [{"day": r[0], "count": r[1]} for r in db_cursor.fetchall()]
 
