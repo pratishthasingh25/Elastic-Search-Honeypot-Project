@@ -42,7 +42,11 @@ class StatsHandler(tornado.web.RequestHandler):
         db_cursor.execute("SELECT COUNT(*) FROM events")
         total_events = db_cursor.fetchone()[0]
 
-        db_cursor.execute("SELECT COUNT(*) FROM events WHERE event_type LIKE '%Attack%'")
+        db_cursor.execute("""
+            SELECT COUNT(*)
+            FROM events
+            WHERE event_type != 'Normal Traffic'
+        """)
         total_attacks = db_cursor.fetchone()[0]
 
         db_cursor.execute("""SELECT source_ip, COUNT(*) c FROM events
