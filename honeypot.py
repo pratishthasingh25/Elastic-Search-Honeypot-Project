@@ -322,9 +322,13 @@ class BaseHandler(tornado.web.RequestHandler):
     """Shared GET + POST handling for all honeypot endpoints."""
 
     async def handle_request(self, endpoint_type="general"):
-        ip  = self.request.remote_ip
+        source_ip = self.request.headers.get(
+            "X-Forwarded-For",
+            self.request.remote_ip
+        ).split(",")[0].strip()
+
         uri = self.request.uri
-        ua  = self.request.headers.get("User-Agent", "Unknown")
+        ua = self.request.headers.get("User-Agent", "Unknown")
         method = self.request.method
 
         # Extract POST body if present
@@ -376,7 +380,10 @@ class FakeElasticsearchHandler(BaseHandler):
         self.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
     
     async def get(self):
-        ip  = self.request.remote_ip
+        ip = self.request.headers.get(
+            "X-Forwarded-For",
+            self.request.remote_ip
+        ).split(",")[0].strip()
         uri = self.request.uri
         ua  = self.request.headers.get("User-Agent", "Unknown")
         event = classify_attack(uri, ua)
@@ -415,7 +422,10 @@ class FakeLoginHandler(tornado.web.RequestHandler):
     """
 
     def get(self):
-        ip = self.request.remote_ip
+        ip = self.request.headers.get(
+            "X-Forwarded-For",
+            self.request.remote_ip
+        ).split(",")[0].strip()
         ua = self.request.headers.get("User-Agent", "Unknown")
         # Log the probe
         tornado.ioloop.IOLoop.current().add_callback(
@@ -425,7 +435,10 @@ class FakeLoginHandler(tornado.web.RequestHandler):
         self.write(FAKE_LOGIN_HTML)
 
     async def post(self):
-        ip = self.request.remote_ip
+        ip = self.request.headers.get(
+            "X-Forwarded-For",
+            self.request.remote_ip
+        ).split(",")[0].strip()
         ua = self.request.headers.get("User-Agent", "Unknown")
 
         # Parse submitted credentials
